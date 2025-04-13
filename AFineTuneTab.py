@@ -47,7 +47,8 @@ class AFineTuneTab(QWidget):
         right_layout.setContentsMargins(0, 0, 0, 0)
         
         self.base_model = QLineEdit('models/gemini-1.5-flash-001-tuning')
-        self.tuned_model_name = QLineEdit('test tuned model')
+        self.tuned_model_name = QLineEdit()
+        self.tuned_model_name.setPlaceholderText("Model Name")
         self.epoch_count = QSpinBox()
         self.epoch_count.setValue(5)
         self.epoch_count.setRange(1, 100)
