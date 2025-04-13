@@ -4,6 +4,7 @@ from PyQt6.QtCore import Qt
 from AChatTab import AChatTab
 from AFineTuneTab import AFineTuneTab
 from AModelsTab import AModelsTab
+from AOptionsTab import AOptionsTab
 from ATuningListModel import ATuningListModel
 
 class MainWindow(QMainWindow):
@@ -49,6 +50,12 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.model_list_button)
         self.button_group.addButton(self.model_list_button)
 
+        self.options_button = QPushButton("Options")
+        self.options_button.setCheckable(True)
+        self.options_button.clicked.connect(lambda: self.tabs.setCurrentIndex(3))
+        layout.addWidget(self.options_button)
+        self.button_group.addButton(self.options_button)
+
         layout.addStretch()
         
         dock.setWidget(dock_content)
@@ -62,10 +69,12 @@ class MainWindow(QMainWindow):
         self.chat_tab = AChatTab(tuning_model=self.tuning_model)
         self.fine_tune_tab = AFineTuneTab()
         self.models_tab = AModelsTab(tuning_model=self.tuning_model)
+        self.options_tab = AOptionsTab()
         
         self.tabs.addTab(self.chat_tab, "")
         self.tabs.addTab(self.fine_tune_tab, "")
         self.tabs.addTab(self.models_tab, "")
+        self.tabs.addTab(self.options_tab, "")
 
 
 def main():
@@ -76,4 +85,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 

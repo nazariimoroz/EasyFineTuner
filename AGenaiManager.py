@@ -3,9 +3,9 @@ from google.genai import types
 from py_singleton import singleton
 import json
 import os
-import pathlib
 from dataclasses import dataclass
 from typing import Any
+from ACacheManager import ACacheManager
 
 @dataclass
 class TuningWrapper:
@@ -50,36 +50,26 @@ class TuningWrapper:
 
 @singleton
 class AGenaiManager:
-    CACHE_DIR = pathlib.Path.home() / '.cache' / 'easy_fine_tuner'
-    DATASETS_CACHE = CACHE_DIR / 'training_datasets.json'
-
     def __init__(self):
-        self.client = genai.Client()
-        self.training_datasets = {}
-        self._load_cache()
-        
-    def _load_cache(self):
-        try:
-            self.CACHE_DIR.mkdir(parents=True, exist_ok=True)
-            if self.DATASETS_CACHE.exists():
-                with open(self.DATASETS_CACHE, 'r') as f:
-                    self.training_datasets = json.load(f)
-        except Exception:
-            self.training_datasets = {}
+        self.cache_manager = ACacheManager()
+        api_key = self.cache_manager.get_api_key()
+        if api_key:
+            os.environ['GOOGLE_API_KEY'] = api_key
             
-    def _save_cache(self):
+        self.client = genai.Client()
+        self.training_datasets = self.cache_manager.load_training_datasets()
+        
+    def list_tunings(self):
+        wrapped_tunings = []
+
         try:
-            with open(self.DATASETS_CACHE, 'w') as f:
-                json.dump(self.training_datasets, f)
+            tunings = list(self.client.tunings.list())
+            for tuning in tunings:
+                dataset = self.training_datasets.get(tuning.name, "NONE")
+                wrapped_tunings.append(TuningWrapper(tuning, dataset))
         except Exception:
             pass
         
-    def list_tunings(self):
-        tunings = list(self.client.tunings.list())
-        wrapped_tunings = []
-        for tuning in tunings:
-            dataset = self.training_datasets.get(tuning.name, "NONE")
-            wrapped_tunings.append(TuningWrapper(tuning, dataset))
         return wrapped_tunings
         
     def get_tuning(self, name):
@@ -91,7 +81,7 @@ class AGenaiManager:
         self.client.models.delete(model=model_name)
         if model_name in self.training_datasets:
             del self.training_datasets[model_name]
-            self._save_cache()
+            self.cache_manager.save_training_datasets(self.training_datasets)
         
     def create_tuning(self, base_model, training_dataset, config):
         tuning = self.client.tunings.tune(
@@ -111,11 +101,12 @@ class AGenaiManager:
         }
 
         self.training_datasets[tuning.name] = dataset_json
-        self._save_cache()
-        return TuningWrapper(tuning, training_dataset)
+        self.cache_manager.save_training_datasets(self.training_datasets)
+        return TuningWrapper(tuning, dataset_json)
         
     def generate_content(self, model, content):
         return self.client.models.generate_content(
             model=model,
             contents=content
         )
+
