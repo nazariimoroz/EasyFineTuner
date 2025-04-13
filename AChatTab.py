@@ -45,7 +45,7 @@ class AChatTab(QWidget):
                 QMessageBox.warning(self, "Warning", "Please select a model first")
                 return
                 
-            model = self.tuning_model.tunings[selected_index].tuned_model.model
+            model_name = self.tuning_model.tunings[selected_index].name
             content = self.user_input.toPlainText()
             
             if not content.strip():
@@ -53,7 +53,7 @@ class AChatTab(QWidget):
                 return
                 
             genai_manager = AGenaiManager()
-            response = genai_manager.generate_content(model=model, content=content)
+            response = genai_manager.generate_content(model=model_name, content=content)
             
             self.model_output.setText(response.text)
             
